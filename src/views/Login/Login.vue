@@ -56,30 +56,35 @@
 </template>
 
 <script setup lang="ts">
-/* import { defineComponent } from 'vue';
-defineComponent({
-  name: 'LoginView'
-}); */
-
-/* import http from '@/utils/http';
-http.post('/users/login', {
-    "email": "huangrong@imooc.com",
-    "pass": "huangrong"
-}).then((res)=>{
-  console.log(res.data);
-}) */
-import { ref, reactive } from 'vue'
-// import { useStore } from '@/store';
-// const store = useStore();
+import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { useStore } from '@/store';
+import { useRouter } from 'vue-router';
+const store = useStore();
+const router = useRouter();
 
 interface User {
-  email: String,
-  pass: String
+  email: string
+  pass: string
 }
 
-const testUsers:User[] = [
+const ruleFormRef = ref<FormInstance>()
+
+const ruleForm = reactive<User>({
+  email: '',
+  pass: '',
+})
+
+const rules = reactive<FormRules>({
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' },
+  ],
+  pass: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+})
+
+const testUsers: User[] = [
   {
     email: 'huangrong@imooc.com',
     pass: 'huangrong'
@@ -88,10 +93,94 @@ const testUsers:User[] = [
     email: 'hongqigong@imooc.com',
     pass: 'hongqigong'
   }
-]
+];
 
+const submitForm = (formEl: FormInstance | undefined) => {
+  if (!formEl) return
+  formEl.validate((valid) => {
+    if (valid) {
+      store.dispatch('users/login', ruleForm).then((res)=>{
+        if(res.data.errcode === 0){
+          store.commit('users/updateToken', res.data.token);
+          ElMessage.success('登录成功');
+          router.push('/');
+        }
+        else{
+          ElMessage.error('登录失败');
+        }
+      })
+    } else {
+      console.log('error submit!')
+      return false
+    }
+  })
+}
+
+const autoLogin = (user: User) => {
+  ruleForm.email = user.email;
+  ruleForm.pass = user.pass;
+  submitForm(ruleFormRef.value);
+}
 </script>
 
 <style scoped lang="scss">
-
+.login {
+  width: 100vw;
+  height: 100vh;
+  background: url('@/assets/images/login-bg.svg') no-repeat center 110px;
+  background-size: 100%;
+  .header {
+    height: 44px;
+    line-height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 34px;
+    padding-top: 100px;
+    .header-logo {
+      .icon-vue,
+      .icon-icon-test,
+      .icon-typescript {
+        margin-right: 5px;
+        font-size: inherit;
+      }
+      .icon-vue {
+        color: green;
+      }
+      .icon-icon-test {
+        color: #deb887;
+      }
+      .icon-typescript {
+        color: blue;
+      }
+    }
+    .header-title {
+      margin-left: 30px;
+      font-weight: 700;
+      font-size: 30px;
+    }
+  }
+  .desc {
+    text-align: center;
+    padding-top: 30px;
+    color: rgba(0, 0, 0, 0.45);
+    font-size: 16px;
+  }
+  .main {
+    width: 500px;
+    margin: 0 auto;
+    padding-top: 50px;
+  }
+  .users{
+    width: 500px;
+    margin: 60px auto;
+    color: rgba(0,0,0,.65);
+    h3{
+      font-size: 16px;
+    }
+    p{
+      margin: 20px;
+    }
+  }
+}
 </style>

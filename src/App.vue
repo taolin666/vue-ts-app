@@ -3,7 +3,7 @@
 </template>
 
 <style lang="scss">
-@import url('@/assets/style/reset.scss');
-@import url('@/assets/style/common.scss');
-@import url('@/assets/style/iconfont.scss');
+@import '@/assets/styles/reset.scss';
+@import '@/assets/styles/iconfont.scss';
+@import '@/assets/styles/common.scss';
 </style>

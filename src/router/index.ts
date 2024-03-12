@@ -1,4 +1,8 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import _ from 'lodash'
+import store from '@/store'
+import type { StateAll } from '@/store'
+
 const Login = () => import('@/views/Login/Login.vue');
 const Home = () => import('@/views/Home/Home.vue');
 const Sign = () => import('@/views/Sign/Sign.vue');
@@ -38,6 +42,20 @@ const routes: Array<RouteRecordRaw> = [
           icon: 'calendar',
           auth: true
         },
+        beforeEnter: (to, from, next) => {
+          const usersInfo = (store.state as StateAll).users.infos
+          const signsInfo = (store.state as StateAll).signs.infos
+          if (_.isEmpty(signsInfo)) {
+            store.dispatch('signs/getTime', {userId: usersInfo._id}).then(res => {
+              if (res.data.errcode === 0) {
+                store.commit('signs/updateInfos',res.data.infos)
+                next()
+              }
+            })
+          } else {
+            next()
+          }
+        }
       },
       {
         path: 'exception',
@@ -48,6 +66,20 @@ const routes: Array<RouteRecordRaw> = [
           title: '异常考勤查询',
           icon: 'warning',
           auth: true,
+        },
+        beforeEnter: (to, from, next) => {
+          const usersInfo = (store.state as StateAll).users.infos
+          const signsInfo = (store.state as StateAll).signs.infos
+          if (_.isEmpty(signsInfo)) {
+            store.dispatch('signs/getTime', {userId: usersInfo._id}).then(res => {
+              if (res.data.errcode === 0) {
+                store.commit('signs/updateInfos',res.data.infos)
+                next()
+              }
+            })
+          } else {
+            next()
+          }
         }
       },
       {
@@ -84,6 +116,33 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
+})
+
+router.beforeEach((to, from, next)=>{
+  const token = (store.state as StateAll).users.token;
+  const infos = (store.state as StateAll).users.infos;
+  if( to.meta.auth && _.isEmpty(infos) ){
+    if(token){
+      store.dispatch('users/infos').then((res)=>{
+        if(res.data.errcode === 0){
+          store.commit('users/updateInfos', res.data.infos)
+          next()
+        }
+      });
+    }
+    else{
+      next('/login');
+    }
+  }
+  else{
+    if( token && to.path === '/login' ){
+      next('/');
+    }
+    else{
+      next();
+    }
+  }
+
 })
 
 export default router
