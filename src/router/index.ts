@@ -91,6 +91,20 @@ const routes: Array<RouteRecordRaw> = [
           title: '添加考勤审批',
           icon: 'document-add',
           auth: true,
+        },
+        beforeEnter: (to, from, next) => {
+          const usersInfo = (store.state as StateAll).users.infos
+          const checkApplyList = (store.state as StateAll).checks.applyList
+          if (_.isEmpty(checkApplyList)) {
+            store.dispatch('checks/getApply', {applicantId: usersInfo._id}).then(res => {
+              if (res.data.errcode === 0) {
+                store.commit('checks/updateApplyList',res.data.rets)
+                next()
+              }
+            })
+          } else {
+            next()
+          }
         }
       },
       {
@@ -135,7 +149,7 @@ router.beforeEach((to, from, next)=>{
     }
   }
   else{
-    if( token && to.path === '/login' ){
+    if(token && to.path === '/login' ){
       next('/');
     }
     else{
